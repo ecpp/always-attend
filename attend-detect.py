@@ -33,10 +33,15 @@ len3 = 0
 timezone = 3 #in my case its +3 so its 3. it is needed for telegram api to check whether last message is sent on time!
 
 def getUserinput():
-    global lastinput
+    lastinput = "no"
     global messageTime
     link = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/getUpdates"
-    data = requests.get(link).text
+    try:
+        print("Telegram connection success!")
+        data = requests.get(link).text
+    except:
+        print("Error while connecting to telegram servers!")
+        return lastinput
     data = json.loads(data)
     Dict = data['result']
     for obj in Dict:
@@ -45,6 +50,7 @@ def getUserinput():
         now = datetime.datetime.now()
         if(((messageTime.minute == now.minute) or (messageTime.minute == now.minute-1)) and (messageTime.hour + timezone == now.hour)): 
             lastinput = obj['message']['text']
+            return lastinput
         
 
 def ocrProcess(): #take SS of window and process it with ocr
@@ -88,7 +94,8 @@ while True:
         bot.send_photo(chat_id=TELEGRAM_CHAT_ID, photo=open(path, 'rb'))
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text="Do you want to attend? You have 30 seconds!")
         sleep(30)
-        getUserinput()
+        lastinput = getUserinput()
+        sleep(3)
         if(lastinput=="yes" or lastinput=="Yes"):
             print("Attended!")
             keyboard.write(writeToChat)
